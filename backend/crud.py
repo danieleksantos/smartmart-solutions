@@ -1,4 +1,6 @@
 from sqlalchemy.orm import Session
+from sqlalchemy import func
+import calendar 
 import models, schemas
 
 def get_category_by_name(db: Session, name: str):
@@ -28,6 +30,10 @@ def create_product(db: Session, product: schemas.ProductCreate):
     db.refresh(db_product)
     return db_product
 
+def get_product_by_name(db: Session, name: str):
+    return db.query(models.Product).filter(models.Product.name == name).first()
+
+
 def get_sales(db: Session, skip: int = 0, limit: int = 100):
     return db.query(models.Sale).offset(skip).limit(limit).all()
 
@@ -42,3 +48,50 @@ def create_sale(db: Session, sale: schemas.SaleCreate):
     db.commit()
     db.refresh(db_sale)
     return db_sale
+
+def get_dashboard_data(db: Session):
+    """
+    Retorna dois conjuntos de dados:
+    1. sales_by_month: Vendas totais por mês
+    2. category_breakdown: Vendas quebradas por categoria e mês
+    """
+    
+    results = db.query(
+        models.Sale.month,
+        func.sum(models.Sale.quantity).label("total_quantity"),
+        func.sum(models.Sale.total_price).label("total_revenue")
+    ).group_by(models.Sale.month).all()
+    
+    dashboard_data = []
+    for row in results:
+        dashboard_data.append({
+            "month": row.month,
+            "total_quantity": row.total_quantity,
+            "total_revenue": row.total_revenue
+        })
+
+    month_map = {month: index for index, month in enumerate(calendar.month_name) if month}
+    dashboard_data.sort(key=lambda x: month_map.get(x['month'], 100))
+
+    cat_results = db.query(
+        models.Sale.month,
+        models.Category.name,
+        func.sum(models.Sale.total_price)
+    ).join(models.Product, models.Sale.product_id == models.Product.id)\
+     .join(models.Category, models.Product.category_id == models.Category.id)\
+     .group_by(models.Sale.month, models.Category.name).all()
+
+    monthly_groups = {}
+    for month, cat_name, total in cat_results:
+        if month not in monthly_groups:
+            monthly_groups[month] = {"month": month}
+        monthly_groups[month][cat_name] = total
+
+    category_breakdown = list(monthly_groups.values())
+    category_breakdown.sort(key=lambda x: month_map.get(x['month'], 100))
+
+    
+    return {
+        "sales_by_month": dashboard_data,
+        "category_breakdown": category_breakdown
+    }

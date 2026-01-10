@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import List, Optional
+from typing import List, Optional, Dict, Any
 
 class CategoryBase(BaseModel):
     name: str
@@ -45,3 +45,13 @@ class SaleResponse(SaleBase):
 
     class Config:
         from_attributes = True
+
+
+class DashboardMetric(BaseModel):
+    month: str
+    total_quantity: int
+    total_revenue: float
+
+class DashboardResponse(BaseModel):
+    sales_by_month: List[DashboardMetric]
+    category_breakdown: List[Dict[str, Any]]

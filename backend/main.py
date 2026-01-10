@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session
 from typing import List
 import pandas as pd
 import io
+import calendar 
 
 import models, schemas, crud
 from database import engine, get_db
@@ -16,11 +17,7 @@ app = FastAPI(
     version="1.0.0"
 )
 
-
-origins = [
-    "http://localhost:5173",      
-    "http://127.0.0.1:5173",     
-]
+origins = ["*"]
 
 app.add_middleware(
     CORSMiddleware,
@@ -29,6 +26,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
 
 @app.post("/categories/", response_model=schemas.CategoryResponse)
 def create_category(category: schemas.CategoryCreate, db: Session = Depends(get_db)):
@@ -40,6 +38,33 @@ def create_category(category: schemas.CategoryCreate, db: Session = Depends(get_
 @app.get("/categories/", response_model=List[schemas.CategoryResponse])
 def read_categories(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
     return crud.get_categories(db, skip=skip, limit=limit)
+
+@app.post("/categories/upload-csv")
+async def upload_categories_csv(file: UploadFile = File(...), db: Session = Depends(get_db)):
+    if not file.filename.endswith('.csv'):
+        raise HTTPException(status_code=400, detail="Arquivo deve ser CSV")
+    
+    try:
+        contents = await file.read()
+        df = pd.read_csv(io.StringIO(contents.decode('utf-8')))
+        df.columns = df.columns.str.strip().str.lower()
+        
+        added = 0
+        errors = []
+        
+        for _, row in df.iterrows():
+            try:
+                if not crud.get_category_by_name(db, row['name']):
+                    cat = schemas.CategoryCreate(name=str(row['name']))
+                    crud.create_category(db, cat)
+                    added += 1
+            except Exception as e:
+                errors.append(str(e))
+                
+        return {"message": "Categorias importadas", "added": added, "errors": errors}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Erro: {str(e)}")
+
 
 @app.post("/products/", response_model=schemas.ProductResponse)
 def create_product(product: schemas.ProductCreate, db: Session = Depends(get_db)):
@@ -74,6 +99,7 @@ async def upload_products_csv(file: UploadFile = File(...), db: Session = Depend
             try:
                 price_val = row['price']
                 if isinstance(price_val, str): price_val = price_val.replace(',', '.')
+                
                 product_data = schemas.ProductCreate(
                     name=str(row['name']),
                     price=float(price_val),
@@ -87,6 +113,7 @@ async def upload_products_csv(file: UploadFile = File(...), db: Session = Depend
     except HTTPException as he: raise he
     except Exception as e: raise HTTPException(status_code=500, detail=f"Erro interno: {str(e)}")
 
+
 @app.post("/sales/", response_model=schemas.SaleResponse)
 def create_sale(sale: schemas.SaleCreate, db: Session = Depends(get_db)):
     return crud.create_sale(db=db, sale=sale)
@@ -94,3 +121,75 @@ def create_sale(sale: schemas.SaleCreate, db: Session = Depends(get_db)):
 @app.get("/sales/", response_model=List[schemas.SaleResponse])
 def read_sales(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
     return crud.get_sales(db, skip=skip, limit=limit)
+
+@app.post("/sales/upload-csv")
+async def upload_sales_csv(file: UploadFile = File(...), db: Session = Depends(get_db)):
+    """Importa sales.csv - Suporta coluna 'date' convertendo para 'month'"""
+    
+    if not file.filename.endswith('.csv'):
+        raise HTTPException(status_code=400, detail="O arquivo deve ser um CSV.")
+
+    try:
+        contents = await file.read()
+        decoded = contents.decode('utf-8-sig') 
+        
+        df = pd.read_csv(io.StringIO(decoded), sep=',')
+        if len(df.columns) <= 1:
+            df = pd.read_csv(io.StringIO(decoded), sep=';')
+            
+        df.columns = df.columns.str.strip().str.lower()
+        print(f"Colunas encontradas: {df.columns.tolist()}")
+
+        has_month = 'month' in df.columns
+        has_date = 'date' in df.columns
+
+        if not (has_month or has_date):
+            raise HTTPException(status_code=400, detail="O arquivo precisa ter uma coluna 'month' ou 'date'.")
+        
+        required = {'product_id', 'quantity', 'total_price'}
+        if not required.issubset(df.columns):
+            raise HTTPException(status_code=400, detail=f"Faltando colunas: {required - set(df.columns)}")
+
+        added = 0
+        errors = []
+
+        for index, row in df.iterrows():
+            try:
+                month_val = ""
+                if has_month:
+                    month_val = str(row['month'])
+                elif has_date:
+                    date_val = pd.to_datetime(row['date'])
+                    month_name = date_val.month_name()
+                    month_val = month_name
+
+                price_val = row['total_price']
+                if isinstance(price_val, str):
+                    price_val = float(price_val.replace('.', '').replace(',', '.'))
+                
+                sale_data = schemas.SaleCreate(
+                    product_id=int(row['product_id']),
+                    month=month_val, 
+                    quantity=int(row['quantity']),
+                    total_price=float(price_val)
+                )
+                crud.create_sale(db, sale_data)
+                added += 1
+            except Exception as e:
+                errors.append(f"Linha {index}: {str(e)}")
+            
+        return {
+            "message": "Processamento concluído", 
+            "total_added": added, 
+            "errors": errors[:5]
+        }
+
+    except HTTPException as he:
+        raise he
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Erro interno: {str(e)}")
+
+
+@app.get("/dashboard/metrics", response_model=schemas.DashboardResponse)
+def get_dashboard_metrics(db: Session = Depends(get_db)):
+    return crud.get_dashboard_data(db)
