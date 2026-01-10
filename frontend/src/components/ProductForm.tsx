@@ -20,7 +20,7 @@ const ProductForm: React.FC<ProductFormProps> = ({ onSuccess }) => {
   } | null>(null)
 
   useEffect(() => {
-    fetch('import.meta.env.VITE_API_URL/categories/')
+    fetch(`${import.meta.env.VITE_API_URL}/categories/`)
       .then((res) => res.json())
       .then((data: Category[]) => setCategories(data))
       .catch((err) => console.error('Erro ao carregar categorias:', err))
@@ -35,11 +35,14 @@ const ProductForm: React.FC<ProductFormProps> = ({ onSuccess }) => {
         category_id: parseInt(formData.category_id),
       }
 
-      const response = await fetch('import.meta.env.VITE_API_URL/products/', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      })
+      const response = await fetch(
+        `${import.meta.env.VITE_API_URL}/products/`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        },
+      )
 
       if (response.ok) {
         setMessage({ type: 'success', text: 'Produto criado com sucesso!' })

@@ -15,7 +15,7 @@ const ManualEntrySection: React.FC = () => {
   const handleCreateCategory = async (e: React.FormEvent) => {
     e.preventDefault()
     try {
-      const res = await fetch('import.meta.env.VITE_API_URL/categories/', {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/categories/`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name: catName }),

@@ -25,7 +25,7 @@ const Dashboard: React.FC = () => {
     const fetchData = async () => {
       try {
         const response = await fetch(
-          'import.meta.env.VITE_API_URL/dashboard/metrics',
+          `${import.meta.env.VITE_API_URL}/dashboard/metrics`,
         )
 
         if (!response.ok) {

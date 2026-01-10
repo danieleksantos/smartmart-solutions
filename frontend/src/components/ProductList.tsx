@@ -49,7 +49,7 @@ const ProductList: React.FC<ProductListProps> = ({
       if (selectedCategory) params.append('category_id', selectedCategory)
 
       const countRes = await fetch(
-        `import.meta.env.VITE_API_URL/products/count?${params.toString()}`,
+        `${import.meta.env.VITE_API_URL}/products/count?${params.toString()}`,
       )
       const countData = await countRes.json()
       setTotalCount(countData.total)
@@ -59,7 +59,7 @@ const ProductList: React.FC<ProductListProps> = ({
       params.append('limit', PAGE_SIZE.toString())
 
       const response = await fetch(
-        `import.meta.env.VITE_API_URL/products/?${params.toString()}`,
+        `${import.meta.env.VITE_API_URL}/products/?${params.toString()}`,
       )
       const data = await response.json()
       setProducts(data)
@@ -71,7 +71,7 @@ const ProductList: React.FC<ProductListProps> = ({
   }, [currentPage, searchTerm, selectedCategory])
 
   useEffect(() => {
-    fetch('import.meta.env.VITE_API_URL/categories/')
+    fetch(`${import.meta.env.VITE_API_URL}/categories/`)
       .then((res) => res.json())
       .then((data) => setCategories(data))
       .catch((err) => console.error('Erro ao carregar categorias:', err))
@@ -107,7 +107,7 @@ const ProductList: React.FC<ProductListProps> = ({
       }
 
       const response = await fetch(
-        `import.meta.env.VITE_API_URL/products/${editingProduct.id}`,
+        `${import.meta.env.VITE_API_URL}/products/${editingProduct.id}`,
         {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
@@ -137,7 +137,7 @@ const ProductList: React.FC<ProductListProps> = ({
       if (selectedCategory) params.append('category_id', selectedCategory)
 
       const response = await fetch(
-        `import.meta.env.VITE_API_URL/products/export-csv?${params.toString()}`,
+        `${import.meta.env.VITE_API_URL}/products/export-csv?${params.toString()}`,
       )
 
       if (!response.ok) throw new Error('Erro ao baixar CSV')

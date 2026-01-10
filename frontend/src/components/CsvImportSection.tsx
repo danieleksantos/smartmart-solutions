@@ -15,7 +15,7 @@ const CsvImportSection: React.FC = () => {
 
     try {
       const res = await fetch(
-        `import.meta.env.VITE_API_URL/${endpoint}/upload-csv`,
+        `${import.meta.env.VITE_API_URL}/${endpoint}/upload-csv`,
         {
           method: 'POST',
           body: formData,
