@@ -3,6 +3,7 @@ from sqlalchemy import func
 import calendar 
 import models, schemas
 
+# --- CATEGORIAS ---
 def get_category_by_name(db: Session, name: str):
     return db.query(models.Category).filter(models.Category.name == name).first()
 
@@ -16,8 +17,22 @@ def create_category(db: Session, category: schemas.CategoryCreate):
     db.refresh(db_category)
     return db_category
 
-def get_products(db: Session, skip: int = 0, limit: int = 100):
-    return db.query(models.Product).offset(skip).limit(limit).all()
+# --- PRODUTOS ---
+def get_products(db: Session, skip: int = 0, limit: int = 100, search: str | None = None, category_id: int | None = None):
+    query = db.query(models.Product)
+    if search:
+        query = query.filter(models.Product.name.ilike(f"%{search}%"))
+    if category_id:
+        query = query.filter(models.Product.category_id == category_id)
+    return query.offset(skip).limit(limit).all()
+
+def count_products(db: Session, search: str | None = None, category_id: int | None = None):
+    query = db.query(models.Product)
+    if search:
+        query = query.filter(models.Product.name.ilike(f"%{search}%"))
+    if category_id:
+        query = query.filter(models.Product.category_id == category_id)
+    return query.count()
 
 def create_product(db: Session, product: schemas.ProductCreate):
     db_product = models.Product(
@@ -33,7 +48,7 @@ def create_product(db: Session, product: schemas.ProductCreate):
 def get_product_by_name(db: Session, name: str):
     return db.query(models.Product).filter(models.Product.name == name).first()
 
-
+# --- VENDAS ---
 def get_sales(db: Session, skip: int = 0, limit: int = 100):
     return db.query(models.Sale).offset(skip).limit(limit).all()
 
@@ -49,13 +64,8 @@ def create_sale(db: Session, sale: schemas.SaleCreate):
     db.refresh(db_sale)
     return db_sale
 
-def get_dashboard_data(db: Session):
-    """
-    Retorna dois conjuntos de dados:
-    1. sales_by_month: Vendas totais por mês
-    2. category_breakdown: Vendas quebradas por categoria e mês
-    """
-    
+# --- DASHBOARD ---
+def get_dashboard_data(db: Session):    
     results = db.query(
         models.Sale.month,
         func.sum(models.Sale.quantity).label("total_quantity"),
@@ -90,7 +100,6 @@ def get_dashboard_data(db: Session):
     category_breakdown = list(monthly_groups.values())
     category_breakdown.sort(key=lambda x: month_map.get(x['month'], 100))
 
-    
     return {
         "sales_by_month": dashboard_data,
         "category_breakdown": category_breakdown

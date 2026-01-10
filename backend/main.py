@@ -1,7 +1,7 @@
 from fastapi import FastAPI, Depends, HTTPException, File, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
-from typing import List
+from typing import List, Optional
 import pandas as pd
 import io
 import calendar 
@@ -27,6 +27,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# --- CATEGORIAS ---
 
 @app.post("/categories/", response_model=schemas.CategoryResponse)
 def create_category(category: schemas.CategoryCreate, db: Session = Depends(get_db)):
@@ -66,13 +67,31 @@ async def upload_categories_csv(file: UploadFile = File(...), db: Session = Depe
         raise HTTPException(status_code=500, detail=f"Erro: {str(e)}")
 
 
+# --- PRODUTOS ---
+
 @app.post("/products/", response_model=schemas.ProductResponse)
 def create_product(product: schemas.ProductCreate, db: Session = Depends(get_db)):
     return crud.create_product(db=db, product=product)
 
 @app.get("/products/", response_model=List[schemas.ProductResponse])
-def read_products(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
-    return crud.get_products(db, skip=skip, limit=limit)
+@app.get("/products/", response_model=List[schemas.ProductResponse])
+def read_products(
+    skip: int = 0, 
+    limit: int = 100, 
+    search: str | None = None, 
+    category_id: int | None = None,
+    db: Session = Depends(get_db)
+):
+    return crud.get_products(db, skip=skip, limit=limit, search=search, category_id=category_id)
+
+@app.get("/products/count")
+def read_products_count(
+    search: str | None = None,
+    category_id: int | None = None,
+    db: Session = Depends(get_db)
+):
+    count = crud.count_products(db, search=search, category_id=category_id)
+    return {"total": count}
 
 @app.post("/products/upload-csv")
 async def upload_products_csv(file: UploadFile = File(...), db: Session = Depends(get_db)):
@@ -114,6 +133,8 @@ async def upload_products_csv(file: UploadFile = File(...), db: Session = Depend
     except Exception as e: raise HTTPException(status_code=500, detail=f"Erro interno: {str(e)}")
 
 
+# --- VENDAS ---
+
 @app.post("/sales/", response_model=schemas.SaleResponse)
 def create_sale(sale: schemas.SaleCreate, db: Session = Depends(get_db)):
     return crud.create_sale(db=db, sale=sale)
@@ -138,8 +159,7 @@ async def upload_sales_csv(file: UploadFile = File(...), db: Session = Depends(g
             df = pd.read_csv(io.StringIO(decoded), sep=';')
             
         df.columns = df.columns.str.strip().str.lower()
-        print(f"Colunas encontradas: {df.columns.tolist()}")
-
+        
         has_month = 'month' in df.columns
         has_date = 'date' in df.columns
 
@@ -189,6 +209,8 @@ async def upload_sales_csv(file: UploadFile = File(...), db: Session = Depends(g
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Erro interno: {str(e)}")
 
+
+# --- DASHBOARD ---
 
 @app.get("/dashboard/metrics", response_model=schemas.DashboardResponse)
 def get_dashboard_metrics(db: Session = Depends(get_db)):
