@@ -5,6 +5,7 @@ from typing import List, Optional
 import pandas as pd
 import io
 import calendar 
+from fastapi.responses import StreamingResponse
 
 import models, schemas, crud
 from database import engine, get_db
@@ -74,7 +75,6 @@ def create_product(product: schemas.ProductCreate, db: Session = Depends(get_db)
     return crud.create_product(db=db, product=product)
 
 @app.get("/products/", response_model=List[schemas.ProductResponse])
-@app.get("/products/", response_model=List[schemas.ProductResponse])
 def read_products(
     skip: int = 0, 
     limit: int = 100, 
@@ -92,6 +92,37 @@ def read_products_count(
 ):
     count = crud.count_products(db, search=search, category_id=category_id)
     return {"total": count}
+
+@app.get("/products/export-csv")
+def export_products_csv(
+    search: str | None = None,  
+    category_id: int | None = None, 
+    db: Session = Depends(get_db)
+):
+    products = crud.get_products(
+        db, 
+        skip=0, 
+        limit=10000, 
+        search=search, 
+        category_id=category_id
+    )
+    
+    data = []
+    for p in products:
+        data.append({
+            "id": p.id,
+            "name": p.name,
+            "category": p.category.name if p.category else "Sem Categoria",
+            "price": p.price
+        })
+    
+    df = pd.DataFrame(data)
+    stream = io.StringIO()
+    df.to_csv(stream, index=False, sep=",")
+    
+    response = StreamingResponse(iter([stream.getvalue()]), media_type="text/csv")
+    response.headers["Content-Disposition"] = "attachment; filename=products_export.csv"
+    return response
 
 @app.post("/products/upload-csv")
 async def upload_products_csv(file: UploadFile = File(...), db: Session = Depends(get_db)):

@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react'
-import { ChevronLeft, ChevronRight, Filter } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Filter, Download } from 'lucide-react'
 import type { Product, Category } from '../types'
 import SearchProduct from './SearchProduct'
 
-const PAGE_SIZE = 5
+const PAGE_SIZE = 10
 
 interface ProductListProps {
   searchTerm: string
@@ -21,7 +21,6 @@ const ProductList: React.FC<ProductListProps> = ({
   const [products, setProducts] = useState<Product[]>([])
   const [categories, setCategories] = useState<Category[]>([])
   const [loading, setLoading] = useState(true)
-
   const [currentPage, setCurrentPage] = useState(1)
   const [totalCount, setTotalCount] = useState(0)
 
@@ -29,7 +28,7 @@ const ProductList: React.FC<ProductListProps> = ({
     fetch('http://127.0.0.1:8000/categories/')
       .then((res) => res.json())
       .then((data) => setCategories(data))
-      .catch((err) => console.error('Erro categorias:', err))
+      .catch((err) => console.error('Erro ao carregar categorias:', err))
   }, [])
 
   useEffect(() => {
@@ -69,6 +68,44 @@ const ProductList: React.FC<ProductListProps> = ({
     fetchData()
   }, [currentPage, searchTerm, selectedCategory])
 
+  const handleExport = async () => {
+    try {
+      const params = new URLSearchParams()
+      if (searchTerm) params.append('search', searchTerm)
+      if (selectedCategory) params.append('category_id', selectedCategory)
+
+      const response = await fetch(
+        `http://127.0.0.1:8000/products/export-csv?${params.toString()}`,
+      )
+
+      if (!response.ok) throw new Error('Erro ao baixar CSV')
+
+      const blob = await response.blob()
+      const url = window.URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+
+      let filename = 'produtos_geral.csv'
+
+      if (selectedCategory) {
+        const cat = categories.find((c) => c.id === Number(selectedCategory))
+
+        if (cat) {
+          const safeName = cat.name.trim().replace(/\s+/g, '_')
+          filename = `produtos_${safeName}.csv`
+        }
+      }
+
+      a.download = filename
+      document.body.appendChild(a)
+      a.click()
+      a.remove()
+    } catch (error) {
+      console.error('Erro no download:', error)
+      alert('Falha ao exportar produtos.')
+    }
+  }
+
   const totalPages = Math.ceil(totalCount / PAGE_SIZE)
 
   const handlePrev = () => {
@@ -96,6 +133,15 @@ const ProductList: React.FC<ProductListProps> = ({
         </div>
 
         <div className="w-full xl:w-auto flex flex-col md:flex-row gap-3">
+          <button
+            onClick={handleExport}
+            className="flex items-center justify-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition shadow-sm whitespace-nowrap"
+            title="Exportar dados para CSV"
+          >
+            <Download size={18} />
+            <span className="hidden md:inline">Exportar CSV</span>
+          </button>
+
           <div className="relative">
             <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
               <Filter className="w-4 h-4 text-gray-400" />
@@ -134,13 +180,13 @@ const ProductList: React.FC<ProductListProps> = ({
             {loading ? (
               <tr>
                 <td colSpan={4} className="px-6 py-8 text-center">
-                  Carregando...
+                  Carregando dados...
                 </td>
               </tr>
             ) : products.length === 0 ? (
               <tr>
                 <td colSpan={4} className="px-6 py-8 text-center text-gray-400">
-                  Nenhum produto encontrado com esses filtros.
+                  Nenhum produto encontrado.
                 </td>
               </tr>
             ) : (
@@ -178,6 +224,7 @@ const ProductList: React.FC<ProductListProps> = ({
           >
             <ChevronLeft size={16} /> Anterior
           </button>
+
           <button
             onClick={handleNext}
             disabled={currentPage >= totalPages || loading}
