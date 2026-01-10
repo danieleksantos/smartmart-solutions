@@ -22,6 +22,11 @@ class ProductBase(BaseModel):
 class ProductCreate(ProductBase):
     pass
 
+class ProductUpdate(BaseModel):
+    name: str | None = None
+    price: float | None = None
+    category_id: int | None = None
+
 class ProductResponse(ProductBase):
     id: int
     category: Optional[CategoryResponse] = None

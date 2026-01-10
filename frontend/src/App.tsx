@@ -1,7 +1,8 @@
 import React, { useState } from 'react'
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
 import { Menu } from 'lucide-react'
-
+import { ToastContainer } from 'react-toastify'
+import 'react-toastify/dist/ReactToastify.css'
 import Sidebar from './components/Sidebar'
 import Dashboard from './components/Dashboard'
 import Products from './pages/Products'
@@ -13,6 +14,8 @@ const App: React.FC = () => {
   return (
     <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
       <div className="flex min-h-screen bg-gray-50">
+        <ToastContainer autoClose={3000} position="top-right" />
+
         <Sidebar
           isOpen={isSidebarOpen}
           onClose={() => setIsSidebarOpen(false)}

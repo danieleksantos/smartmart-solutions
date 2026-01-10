@@ -70,10 +70,6 @@ async def upload_categories_csv(file: UploadFile = File(...), db: Session = Depe
 
 # --- PRODUTOS ---
 
-@app.post("/products/", response_model=schemas.ProductResponse)
-def create_product(product: schemas.ProductCreate, db: Session = Depends(get_db)):
-    return crud.create_product(db=db, product=product)
-
 @app.get("/products/", response_model=List[schemas.ProductResponse])
 def read_products(
     skip: int = 0, 
@@ -124,6 +120,11 @@ def export_products_csv(
     response.headers["Content-Disposition"] = "attachment; filename=products_export.csv"
     return response
 
+
+@app.post("/products/", response_model=schemas.ProductResponse)
+def create_product(product: schemas.ProductCreate, db: Session = Depends(get_db)):
+    return crud.create_product(db=db, product=product)
+
 @app.post("/products/upload-csv")
 async def upload_products_csv(file: UploadFile = File(...), db: Session = Depends(get_db)):
     if not file.filename.endswith('.csv'):
@@ -163,6 +164,12 @@ async def upload_products_csv(file: UploadFile = File(...), db: Session = Depend
     except HTTPException as he: raise he
     except Exception as e: raise HTTPException(status_code=500, detail=f"Erro interno: {str(e)}")
 
+@app.put("/products/{product_id}", response_model=schemas.ProductResponse)
+def update_product(product_id: int, product: schemas.ProductUpdate, db: Session = Depends(get_db)):
+    db_product = crud.update_product(db, product_id=product_id, product=product)
+    if db_product is None:
+        raise HTTPException(status_code=404, detail="Produto não encontrado")
+    return db_product
 
 # --- VENDAS ---
 

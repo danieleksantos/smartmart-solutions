@@ -1,5 +1,14 @@
-import React, { useEffect, useState } from 'react'
-import { ChevronLeft, ChevronRight, Filter, Download } from 'lucide-react'
+import React, { useEffect, useState, useCallback } from 'react'
+import {
+  ChevronLeft,
+  ChevronRight,
+  Filter,
+  Download,
+  Edit,
+  X,
+  Save,
+} from 'lucide-react'
+import { toast } from 'react-toastify'
 import type { Product, Category } from '../types'
 import SearchProduct from './SearchProduct'
 
@@ -24,6 +33,43 @@ const ProductList: React.FC<ProductListProps> = ({
   const [currentPage, setCurrentPage] = useState(1)
   const [totalCount, setTotalCount] = useState(0)
 
+  const [editingProduct, setEditingProduct] = useState<Product | null>(null)
+  const [editFormData, setEditFormData] = useState({
+    name: '',
+    price: '',
+    category_id: '',
+  })
+  const [isSaving, setIsSaving] = useState(false)
+
+  const fetchData = useCallback(async () => {
+    setLoading(true)
+    try {
+      const params = new URLSearchParams()
+      if (searchTerm) params.append('search', searchTerm)
+      if (selectedCategory) params.append('category_id', selectedCategory)
+
+      const countRes = await fetch(
+        `http://127.0.0.1:8000/products/count?${params.toString()}`,
+      )
+      const countData = await countRes.json()
+      setTotalCount(countData.total)
+
+      const skip = (currentPage - 1) * PAGE_SIZE
+      params.append('skip', skip.toString())
+      params.append('limit', PAGE_SIZE.toString())
+
+      const response = await fetch(
+        `http://127.0.0.1:8000/products/?${params.toString()}`,
+      )
+      const data = await response.json()
+      setProducts(data)
+    } catch (error) {
+      console.error('Erro ao buscar dados:', error)
+    } finally {
+      setLoading(false)
+    }
+  }, [currentPage, searchTerm, selectedCategory])
+
   useEffect(() => {
     fetch('http://127.0.0.1:8000/categories/')
       .then((res) => res.json())
@@ -36,37 +82,53 @@ const ProductList: React.FC<ProductListProps> = ({
   }, [searchTerm, selectedCategory])
 
   useEffect(() => {
-    const fetchData = async () => {
-      setLoading(true)
-      try {
-        const params = new URLSearchParams()
-        if (searchTerm) params.append('search', searchTerm)
-        if (selectedCategory) params.append('category_id', selectedCategory)
-
-        const countRes = await fetch(
-          `http://127.0.0.1:8000/products/count?${params.toString()}`,
-        )
-        const countData = await countRes.json()
-        setTotalCount(countData.total)
-
-        const skip = (currentPage - 1) * PAGE_SIZE
-        params.append('skip', skip.toString())
-        params.append('limit', PAGE_SIZE.toString())
-
-        const response = await fetch(
-          `http://127.0.0.1:8000/products/?${params.toString()}`,
-        )
-        const data = await response.json()
-        setProducts(data)
-      } catch (error) {
-        console.error('Erro ao buscar dados:', error)
-      } finally {
-        setLoading(false)
-      }
-    }
-
     fetchData()
-  }, [currentPage, searchTerm, selectedCategory])
+  }, [fetchData])
+
+  const handleEditClick = (product: Product) => {
+    setEditingProduct(product)
+    setEditFormData({
+      name: product.name,
+      price: product.price.toString(),
+      category_id: product.category_id ? product.category_id.toString() : '',
+    })
+  }
+
+  const handleUpdateProduct = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!editingProduct) return
+
+    setIsSaving(true)
+    try {
+      const payload = {
+        name: editFormData.name,
+        price: parseFloat(editFormData.price),
+        category_id: parseInt(editFormData.category_id),
+      }
+
+      const response = await fetch(
+        `http://127.0.0.1:8000/products/${editingProduct.id}`,
+        {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        },
+      )
+
+      if (response.ok) {
+        setEditingProduct(null)
+        fetchData()
+        toast.success('Produto atualizado com sucesso!')
+      } else {
+        toast.error('Erro ao atualizar produto.')
+      }
+    } catch (error) {
+      console.error('Erro ao salvar:', error)
+      toast.error('Erro de conexão com o servidor.')
+    } finally {
+      setIsSaving(false)
+    }
+  }
 
   const handleExport = async () => {
     try {
@@ -98,9 +160,11 @@ const ProductList: React.FC<ProductListProps> = ({
       document.body.appendChild(a)
       a.click()
       a.remove()
+
+      toast.success('Download iniciado!')
     } catch (error) {
       console.error('Erro no download:', error)
-      alert('Falha ao exportar produtos.')
+      toast.error('Falha ao exportar o arquivo CSV.')
     }
   }
 
@@ -120,7 +184,7 @@ const ProductList: React.FC<ProductListProps> = ({
   }
 
   return (
-    <div className="bg-white rounded-lg shadow-md overflow-hidden flex flex-col h-full">
+    <div className="bg-white rounded-lg shadow-md overflow-hidden flex flex-col h-full relative">
       <div className="p-6 border-b border-gray-200 flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
         <div className="flex items-center gap-4">
           <h2 className="text-xl font-bold text-gray-700">Produtos</h2>
@@ -157,7 +221,7 @@ const ProductList: React.FC<ProductListProps> = ({
             </select>
           </div>
 
-          <div className="w-full md:w-80 md:pr-10">
+          <div className="w-full md:w-80">
             <SearchProduct value={searchTerm} onChange={onSearchChange} />
           </div>
         </div>
@@ -171,24 +235,28 @@ const ProductList: React.FC<ProductListProps> = ({
               <th className="px-6 py-3">Nome</th>
               <th className="px-6 py-3">Categoria</th>
               <th className="px-6 py-3 text-right">Preço</th>
+              <th className="px-6 py-3 text-center">Ações</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200">
             {loading ? (
               <tr>
-                <td colSpan={4} className="px-6 py-8 text-center">
+                <td colSpan={5} className="px-6 py-8 text-center">
                   Carregando dados...
                 </td>
               </tr>
             ) : products.length === 0 ? (
               <tr>
-                <td colSpan={4} className="px-6 py-8 text-center text-gray-400">
+                <td colSpan={5} className="px-6 py-8 text-center text-gray-400">
                   Nenhum produto encontrado.
                 </td>
               </tr>
             ) : (
               products.map((product) => (
-                <tr key={product.id} className="hover:bg-gray-50 transition">
+                <tr
+                  key={product.id}
+                  className="hover:bg-gray-50 transition group"
+                >
                   <td className="px-6 py-4 font-medium text-gray-900">
                     #{product.id}
                   </td>
@@ -200,6 +268,15 @@ const ProductList: React.FC<ProductListProps> = ({
                   </td>
                   <td className="px-6 py-4 text-right font-medium text-green-600">
                     {formatCurrency(product.price)}
+                  </td>
+                  <td className="px-6 py-4 text-center">
+                    <button
+                      onClick={() => handleEditClick(product)}
+                      className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-full transition"
+                      title="Editar Produto"
+                    >
+                      <Edit size={18} />
+                    </button>
                   </td>
                 </tr>
               ))
@@ -231,6 +308,104 @@ const ProductList: React.FC<ProductListProps> = ({
           </button>
         </div>
       </div>
+
+      {editingProduct && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-md animate-in fade-in zoom-in duration-200">
+            <div className="flex justify-between items-center p-6 border-b border-gray-100">
+              <h3 className="text-lg font-bold text-gray-800">
+                Editar Produto
+              </h3>
+              <button
+                onClick={() => setEditingProduct(null)}
+                className="text-gray-400 hover:text-gray-600 transition"
+              >
+                <X size={24} />
+              </button>
+            </div>
+
+            <form onSubmit={handleUpdateProduct} className="p-6 space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Nome do Produto
+                </label>
+                <input
+                  type="text"
+                  required
+                  className="w-full border border-gray-300 rounded-md p-2 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                  value={editFormData.name}
+                  onChange={(e) =>
+                    setEditFormData({ ...editFormData, name: e.target.value })
+                  }
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Preço (R$)
+                  </label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    required
+                    className="w-full border border-gray-300 rounded-md p-2 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                    value={editFormData.price}
+                    onChange={(e) =>
+                      setEditFormData({
+                        ...editFormData,
+                        price: e.target.value,
+                      })
+                    }
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Categoria
+                  </label>
+                  <select
+                    required
+                    className="w-full border border-gray-300 rounded-md p-2 bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                    value={editFormData.category_id}
+                    onChange={(e) =>
+                      setEditFormData({
+                        ...editFormData,
+                        category_id: e.target.value,
+                      })
+                    }
+                  >
+                    <option value="">Selecione...</option>
+                    {categories.map((cat) => (
+                      <option key={cat.id} value={cat.id}>
+                        {cat.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-3 pt-4">
+                <button
+                  type="button"
+                  onClick={() => setEditingProduct(null)}
+                  className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-md transition"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSaving}
+                  className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition disabled:opacity-50"
+                >
+                  <Save size={18} />
+                  {isSaving ? 'Salvando...' : 'Salvar Alterações'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

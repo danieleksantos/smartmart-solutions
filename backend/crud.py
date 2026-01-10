@@ -26,13 +26,9 @@ def get_products(db: Session, skip: int = 0, limit: int = 100, search: str | Non
         query = query.filter(models.Product.category_id == category_id)
     return query.offset(skip).limit(limit).all()
 
-def count_products(db: Session, search: str | None = None, category_id: int | None = None):
-    query = db.query(models.Product)
-    if search:
-        query = query.filter(models.Product.name.ilike(f"%{search}%"))
-    if category_id:
-        query = query.filter(models.Product.category_id == category_id)
-    return query.count()
+
+def get_product_by_name(db: Session, name: str):
+    return db.query(models.Product).filter(models.Product.name == name).first()
 
 def create_product(db: Session, product: schemas.ProductCreate):
     db_product = models.Product(
@@ -45,8 +41,29 @@ def create_product(db: Session, product: schemas.ProductCreate):
     db.refresh(db_product)
     return db_product
 
-def get_product_by_name(db: Session, name: str):
-    return db.query(models.Product).filter(models.Product.name == name).first()
+def update_product(db: Session, product_id: int, product: schemas.ProductUpdate):
+    db_product = db.query(models.Product).filter(models.Product.id == product_id).first()
+    
+    if db_product:
+        if product.name is not None:
+            db_product.name = product.name
+        if product.price is not None:
+            db_product.price = product.price
+        if product.category_id is not None:
+            db_product.category_id = product.category_id
+            
+        db.commit()
+        db.refresh(db_product)
+        
+    return db_product
+
+def count_products(db: Session, search: str | None = None, category_id: int | None = None):
+    query = db.query(models.Product)
+    if search:
+        query = query.filter(models.Product.name.ilike(f"%{search}%"))
+    if category_id:
+        query = query.filter(models.Product.category_id == category_id)
+    return query.count()
 
 # --- VENDAS ---
 def get_sales(db: Session, skip: int = 0, limit: int = 100):
