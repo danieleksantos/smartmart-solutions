@@ -1,6 +1,6 @@
 import React from 'react'
 import { Link, useLocation } from 'react-router-dom'
-import { LayoutDashboard, Upload, Package } from 'lucide-react'
+import { LayoutDashboard, Database, Package } from 'lucide-react'
 
 import logoImg from '../assets/logo.png'
 
@@ -38,9 +38,9 @@ const Sidebar: React.FC = () => {
           <span>Produtos</span>
         </Link>
 
-        <Link to="/uploads" className={getLinkClass('/uploads')}>
-          <Upload size={20} />
-          <span>Importar CSV</span>
+        <Link to="/import" className={getLinkClass('/import')}>
+          <Database size={20} />
+          <span>Importação de Dados</span>
         </Link>
       </nav>
 

@@ -1,14 +1,12 @@
 import React, { useState } from 'react'
-import ProductForm from '../components/ProductForm'
 import ProductList from '../components/ProductList'
 
 const Products: React.FC = () => {
   const [refreshKey, setRefreshKey] = useState(0)
   const [searchTerm, setSearchTerm] = useState('')
-
   const [selectedCategory, setSelectedCategory] = useState('')
 
-  const handleProductAdded = () => {
+  const handleListUpdate = () => {
     setRefreshKey((prev) => prev + 1)
   }
 
@@ -17,11 +15,9 @@ const Products: React.FC = () => {
       <div>
         <h1 className="text-3xl font-bold text-gray-800">Gerenciar Produtos</h1>
         <p className="text-gray-500 mt-1">
-          Cadastre novos itens e visualize o inventário atual.
+          Visualize o inventário, filtre por categoria ou exporte relatórios.
         </p>
       </div>
-
-      <ProductForm onSuccess={handleProductAdded} />
 
       <ProductList
         key={refreshKey}
