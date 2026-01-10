@@ -86,12 +86,12 @@ const Dashboard: React.FC = () => {
 
   return (
     <div className="p-6 bg-gray-50 min-h-screen">
-      <div className="max-w-7xl mx-auto">
-        <h1 className="text-3xl font-bold text-gray-800 mb-8">
+      <div className="max-w-7xl mx-auto space-y-8">
+        <h1 className="text-3xl font-bold text-gray-800">
           Dashboard de Vendas
         </h1>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="bg-white p-6 rounded-lg shadow-md border-l-4 border-blue-500">
             <h3 className="text-gray-500 text-sm font-medium uppercase">
               Total de Vendas (Qtd)
@@ -111,12 +111,12 @@ const Dashboard: React.FC = () => {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-          <div className="bg-white p-6 rounded-lg shadow-md">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <div className="bg-white p-6 rounded-lg shadow-md flex flex-col">
             <h2 className="text-xl font-semibold text-gray-700 mb-4">
               Volume de Vendas Mensal
             </h2>
-            <div className="h-80 w-full min-h-[300px]">
+            <div className="w-full h-[350px]">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={data}>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} />
@@ -140,11 +140,11 @@ const Dashboard: React.FC = () => {
             </div>
           </div>
 
-          <div className="bg-white p-6 rounded-lg shadow-md">
+          <div className="bg-white p-6 rounded-lg shadow-md flex flex-col">
             <h2 className="text-xl font-semibold text-gray-700 mb-4">
               Faturamento Mensal
             </h2>
-            <div className="h-80 w-full min-h-[300px]">
+            <div className="w-full h-[350px]">
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={data}>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} />
@@ -172,11 +172,11 @@ const Dashboard: React.FC = () => {
           </div>
         </div>
 
-        <div className="bg-white p-6 rounded-lg shadow-md">
+        <div className="bg-white p-6 rounded-lg shadow-md flex flex-col">
           <h2 className="text-xl font-semibold text-gray-700 mb-4">
             Receita por Categoria (Comparativo Mensal)
           </h2>
-          <div className="h-96 w-full min-h-[300px]">
+          <div className="w-full h-[400px]">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={categoryData}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} />
