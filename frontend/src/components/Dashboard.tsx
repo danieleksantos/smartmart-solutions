@@ -24,7 +24,9 @@ const Dashboard: React.FC = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const response = await fetch('http://127.0.0.1:8000/dashboard/metrics')
+        const response = await fetch(
+          'import.meta.env.VITE_API_URL/dashboard/metrics',
+        )
 
         if (!response.ok) {
           throw new Error('Falha ao buscar dados do dashboard')

@@ -120,7 +120,7 @@ pip install -r requirements.txt
 uvicorn main:app --reload
 ```
 
-O Backend rodará em: http://127.0.0.1:8000 Documentação automática (Swagger): http://127.0.0.1:8000/docs
+O Backend rodará em: import.meta.env.VITE_API_URL Documentação automática (Swagger): import.meta.env.VITE_API_URL/docs
 
 ### 3. Configurar o Frontend
 Abra um novo terminal na raiz do projeto:

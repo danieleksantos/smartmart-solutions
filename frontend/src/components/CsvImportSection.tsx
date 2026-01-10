@@ -14,10 +14,13 @@ const CsvImportSection: React.FC = () => {
     formData.append('file', file)
 
     try {
-      const res = await fetch(`http://127.0.0.1:8000/${endpoint}/upload-csv`, {
-        method: 'POST',
-        body: formData,
-      })
+      const res = await fetch(
+        `import.meta.env.VITE_API_URL/${endpoint}/upload-csv`,
+        {
+          method: 'POST',
+          body: formData,
+        },
+      )
 
       const data: UploadResponse = await res.json()
 
