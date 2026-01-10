@@ -2,13 +2,8 @@ import React, { useState } from 'react'
 import ProductList from '../components/ProductList'
 
 const Products: React.FC = () => {
-  const [refreshKey, setRefreshKey] = useState(0)
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedCategory, setSelectedCategory] = useState('')
-
-  const handleListUpdate = () => {
-    setRefreshKey((prev) => prev + 1)
-  }
 
   return (
     <div className="p-8 max-w-6xl mx-auto space-y-8">
@@ -20,7 +15,6 @@ const Products: React.FC = () => {
       </div>
 
       <ProductList
-        key={refreshKey}
         searchTerm={searchTerm}
         onSearchChange={setSearchTerm}
         selectedCategory={selectedCategory}
