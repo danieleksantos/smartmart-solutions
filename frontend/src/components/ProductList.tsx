@@ -86,10 +86,8 @@ const ProductList: React.FC<ProductListProps> = ({
       a.href = url
 
       let filename = 'produtos_geral.csv'
-
       if (selectedCategory) {
         const cat = categories.find((c) => c.id === Number(selectedCategory))
-
         if (cat) {
           const safeName = cat.name.trim().replace(/\s+/g, '_')
           filename = `produtos_${safeName}.csv`
@@ -107,7 +105,6 @@ const ProductList: React.FC<ProductListProps> = ({
   }
 
   const totalPages = Math.ceil(totalCount / PAGE_SIZE)
-
   const handlePrev = () => {
     if (currentPage > 1) setCurrentPage((p) => p - 1)
   }
@@ -124,7 +121,7 @@ const ProductList: React.FC<ProductListProps> = ({
 
   return (
     <div className="bg-white rounded-lg shadow-md overflow-hidden flex flex-col h-full">
-      <div className="p-6 border-b border-gray-200 flex flex-col xl:flex-row justify-between items-start xl:items-center gap-4">
+      <div className="p-6 border-b border-gray-200 flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
         <div className="flex items-center gap-4">
           <h2 className="text-xl font-bold text-gray-700">Produtos</h2>
           <span className="text-sm text-gray-500 bg-gray-100 px-3 py-1 rounded-full whitespace-nowrap">
@@ -132,7 +129,7 @@ const ProductList: React.FC<ProductListProps> = ({
           </span>
         </div>
 
-        <div className="w-full xl:w-auto flex flex-col md:flex-row gap-3">
+        <div className="w-full lg:w-auto flex flex-col md:flex-row gap-3">
           <button
             onClick={handleExport}
             className="flex items-center justify-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition shadow-sm whitespace-nowrap"
@@ -160,7 +157,7 @@ const ProductList: React.FC<ProductListProps> = ({
             </select>
           </div>
 
-          <div className="w-full md:w-80">
+          <div className="w-full md:w-80 md:pr-10">
             <SearchProduct value={searchTerm} onChange={onSearchChange} />
           </div>
         </div>

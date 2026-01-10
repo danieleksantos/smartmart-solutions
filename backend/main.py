@@ -175,9 +175,7 @@ def read_sales(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
     return crud.get_sales(db, skip=skip, limit=limit)
 
 @app.post("/sales/upload-csv")
-async def upload_sales_csv(file: UploadFile = File(...), db: Session = Depends(get_db)):
-    """Importa sales.csv - Suporta coluna 'date' convertendo para 'month'"""
-    
+async def upload_sales_csv(file: UploadFile = File(...), db: Session = Depends(get_db)):    
     if not file.filename.endswith('.csv'):
         raise HTTPException(status_code=400, detail="O arquivo deve ser um CSV.")
 

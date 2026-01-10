@@ -18,10 +18,10 @@ const ImportData: React.FC = () => {
         </p>
       </div>
 
-      <div className="flex border-b border-gray-200 mb-6">
+      <div className="flex border-b border-gray-200 mb-6 overflow-x-auto">
         <button
           onClick={() => setActiveTab('csv')}
-          className={`flex items-center gap-2 px-6 py-3 font-medium text-sm transition-colors border-b-2 ${
+          className={`flex items-center gap-2 px-6 py-3 font-medium text-sm transition-colors border-b-2 whitespace-nowrap ${
             activeTab === 'csv'
               ? 'border-blue-600 text-blue-600'
               : 'border-transparent text-gray-500 hover:text-gray-700'
@@ -33,7 +33,7 @@ const ImportData: React.FC = () => {
 
         <button
           onClick={() => setActiveTab('manual')}
-          className={`flex items-center gap-2 px-6 py-3 font-medium text-sm transition-colors border-b-2 ${
+          className={`flex items-center gap-2 px-6 py-3 font-medium text-sm transition-colors border-b-2 whitespace-nowrap ${
             activeTab === 'manual'
               ? 'border-blue-600 text-blue-600'
               : 'border-transparent text-gray-500 hover:text-gray-700'

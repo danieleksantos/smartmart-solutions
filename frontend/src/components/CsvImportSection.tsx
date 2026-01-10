@@ -31,10 +31,13 @@ const CsvImportSection: React.FC = () => {
           text: `Sucesso! ${count} registros processados.`,
         },
       }))
-    } catch (error: any) {
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : 'Erro desconhecido'
+
       setMessages((prev) => ({
         ...prev,
-        [key]: { type: 'error', text: error.message || 'Erro desconhecido' },
+        [key]: { type: 'error', text: errorMessage },
       }))
     } finally {
       setLoading(null)
